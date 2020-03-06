@@ -1,6 +1,8 @@
 import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob, bpy_extras, site, aud
 import numpy as np
 from time import time
+from .. Functions import functions
+from .. Functions import constants
 
 module_pip = False
 module_opencv = False
@@ -897,7 +899,7 @@ def apply_materials(scene):
 
                         #TODO: Proper check
 
-                        mainNode = outputNode.inputs[0].links[0].from_node
+                        mainNode = functions.find_node_by_type(nodetree.nodes,constants.Node_Types.pbr_node)[0]
 
                         if len(mainNode.inputs[0].links) == 0:
                             baseColorValue = mainNode.inputs[0].default_value
@@ -930,10 +932,14 @@ def apply_materials(scene):
                         LightmapNode.image = bpy.data.images[obj.name + "_baked"]
                         LightmapNode.name = "Lightmap_Image"
 
+                        material = bpy.data.materials[slot.name]
+                        functions.lightmap_to_ao(material,LightmapNode)
+
                         UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
                         UVLightmap.uv_map = "UVMap_Lightmap"
                         UVLightmap.name = "Lightmap_UV"
-                        UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
+                        UVLightmap.location = (LightmapNode.location[0]-300,LightmapNode.location[1])
+                        
 
                         if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
                             if scene.TLM_SceneProperties.tlm_encoding_mode == 'RGBM':
@@ -1348,6 +1354,7 @@ def bake_ordered(self, context, process):
     #TODO: EXPOSE AO STRENGTH AND THRESHOLD
 
     print("Baking finished in: %.3f s" % (time() - total_time))
+    self.report({"INFO"},"Baking finished in: %.3f s" % (time() - total_time))
 
     if scene.TLM_SceneProperties.tlm_play_sound:
 

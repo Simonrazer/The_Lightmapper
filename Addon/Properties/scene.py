@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import *
+import os
 
 class TLM_SceneProperties(bpy.types.PropertyGroup):
     tlm_bake_for_selection : BoolProperty(
@@ -177,7 +178,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     tlm_oidn_path : StringProperty(
         name="OIDN Path", 
         description="TODO", 
-        default="", 
+        default=os.path.dirname(os.path.realpath(__file__)) + "..\..\..\Odin\\", 
         subtype="FILE_PATH")
 
     tlm_oidn_verbose : BoolProperty(
