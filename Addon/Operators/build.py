@@ -1,4 +1,7 @@
-import bpy, os, time, blf
+import bpy
+import os
+import time
+import blf
 #from .. Utility import utility
 from .. Utility import bake_run
 
@@ -6,6 +9,7 @@ font_info = {
     "font_id": 0,
     "handler": None,
 }
+
 
 class TLM_BuildLightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
@@ -19,7 +23,7 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     _warm_up = 0
 
     def modal(self, context, event):
-        #print("Modal...")
+        # print("Modal...")
         context.area.tag_redraw()
 
         scene = context.scene
@@ -62,10 +66,11 @@ class TLM_BuildLightmaps(bpy.types.Operator):
                         if obj.name in previousToggle:
                             obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
 
-                self._handle = bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
-                #print("Finished...")
+                self._handle = bpy.types.SpaceView3D.draw_handler_remove(
+                    self._handle, 'WINDOW')
+                # print("Finished...")
                 return {'FINISHED'}
-            
+
             #bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
             #self._time = str(time.strftime('%X %x %Z'))
 
@@ -74,8 +79,8 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     def invoke(self, context, event):
 
         #self._time = str(time.strftime('%X %x %Z'))
-        
-        #Clean lightmaps first?
+
+        # Clean lightmaps first?
         bpy.ops.tlm.clean_lightmaps()
 
         font_path = bpy.path.abspath('//Zeyada.ttf')
@@ -88,16 +93,19 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
         args = (context, event)
 
-        self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
+        self._timer = context.window_manager.event_timer_add(
+            0.1, window=context.window)
         context.window_manager.modal_handler_add(self)
-        self._handle = bpy.types.SpaceView3D.draw_handler_add(self.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
-        #print("Invoked..")
+        self._handle = bpy.types.SpaceView3D.draw_handler_add(
+            self.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
+        # print("Invoked..")
 
         return {'RUNNING_MODAL'}
 
     def cancel(self, context):
-        self._handle = bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
-        #print("Cancel..")
+        self._handle = bpy.types.SpaceView3D.draw_handler_remove(
+            self._handle, 'WINDOW')
+        # print("Cancel..")
 
     def draw_callback_px(self, context, event):
         """Draw on the viewports"""

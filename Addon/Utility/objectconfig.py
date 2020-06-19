@@ -1,13 +1,14 @@
 import bpy
 from . import utility, functions, function_constants
 
+
 def configure_world():
     pass
 
+
 def configure_lights():
     pass
-    #Changed way lights are adjusted. Baked hidden with python property instead.
-
+    # Changed way lights are adjusted. Baked hidden with python property instead.
 
     # for obj in bpy.data.objects:
     #     if obj.type == "LIGHT":
@@ -19,6 +20,7 @@ def configure_lights():
 
     #             bpy.data.lights[obj.name].energy = bpy.data.lights[obj.name].energy * obj.TLM_ObjectProperties.tlm_light_intensity_scale
 
+
 def configure_objects(self, scene):
 
     iterNum = 0
@@ -27,9 +29,16 @@ def configure_objects(self, scene):
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             for slot in obj.material_slots:
-                if "." + slot.name + '_Original' in bpy.data.materials:
-                    print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
-                    slot.material = bpy.data.materials["." + slot.name + '_Original']
+                # if "." + slot.name + '_Original' in bpy.data.materials:
+                #   print("The material: " + slot.name +
+                #        " shifted to " + "." + slot.name + '_Original')
+                # slot.material = bpy.data.materials["." +
+                #                                   slot.name + '_Original']
+
+                # Change to favor aboslute Original of material if avaivable
+                if slot.name.endswith("_Original") and slot.name[1:-9] in bpy.data.materials:
+                    print(slot.name + " -> " + slot.name[1:-9])
+                    slot.material = bpy.data.materials[slot.name[1:-9]]
 
     for atlasgroup in scene.TLM_AtlasList:
 
@@ -46,6 +55,7 @@ def configure_objects(self, scene):
                     print("UVMap made A")
                     uvmap = uv_layers.new(name="UVMap_Lightmap")
                     uv_layers.active_index = len(uv_layers) - 1
+                    print("Set new map to active")
                 else:
                     print("Existing found...skipping")
                     for i in range(0, len(uv_layers)):
@@ -58,29 +68,33 @@ def configure_objects(self, scene):
                 obj.select_set(True)
 
         if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            bpy.ops.object.transform_apply(
+                location=True, rotation=True, scale=True)
 
         if atlasgroup.tlm_atlas_lightmap_unwrap_mode == "SmartProject":
             print("Smart Project A for: " + str(atlas_items))
             for obj in atlas_items:
-                print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
+                print(obj.name + ": Active UV: " +
+                      obj.data.uv_layers[obj.data.uv_layers.active_index].name)
 
             if len(atlas_items) > 0:
                 bpy.context.view_layer.objects.active = atlas_items[0]
 
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin,
+                                     user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
         elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Lightmap":
             bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=atlasgroup.tlm_atlas_unwrap_margin)
+            bpy.ops.uv.lightmap_pack(
+                'EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=atlasgroup.tlm_atlas_unwrap_margin)
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
         else:
             print("Copied Existing A")
-            pass #COPY EXISTING
+            pass  # COPY EXISTING
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -90,20 +104,19 @@ def configure_objects(self, scene):
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-
                 currentIterNum = currentIterNum + 1
 
-                #Configure selection
+                # Configure selection
                 bpy.ops.object.select_all(action='DESELECT')
                 bpy.context.view_layer.objects.active = obj
                 obj.select_set(True)
                 obs = bpy.context.view_layer.objects
                 active = obs.active
 
-                #Provide material if none exists
+                # Provide material if none exists
                 utility.preprocess_material(obj, scene)
 
-                #UV Layer management here
+                # UV Layer management here
                 if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
                     uv_layers = obj.data.uv_layers
                     if not "UVMap_Lightmap" in uv_layers:
@@ -111,33 +124,38 @@ def configure_objects(self, scene):
                         uvmap = uv_layers.new(name="UVMap_Lightmap")
                         uv_layers.active_index = len(uv_layers) - 1
 
-                        #if lightmap
+                        # if lightmap
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
                             if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-                            bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
-                        
-                        #if smart project
+                                bpy.ops.object.transform_apply(
+                                    location=True, rotation=True, scale=True)
+                            bpy.ops.uv.lightmap_pack(
+                                'EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
+
+                        # if smart project
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
                             print("Smart Project B")
                             if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                                bpy.ops.object.transform_apply(
+                                    location=True, rotation=True, scale=True)
                             bpy.ops.object.select_all(action='DESELECT')
                             obj.select_set(True)
                             bpy.ops.object.mode_set(mode='EDIT')
                             bpy.ops.mesh.select_all(action='DESELECT')
                             bpy.ops.object.mode_set(mode='OBJECT')
-                            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
-                        
+                            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin,
+                                                     user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
-                            print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
-                            
-                        else: #if copy existing
+                            print("ATLAS GROUP: " +
+                                  obj.TLM_ObjectProperties.tlm_atlas_pointer)
+
+                        else:  # if copy existing
 
                             print("Copied Existing B")
 
-                            #Here we copy an existing map
+                            # Here we copy an existing map
                             pass
                     else:
                         print("Existing found...skipping")
@@ -147,14 +165,15 @@ def configure_objects(self, scene):
                                 print("Lightmap shift B")
                                 break
 
-                #print(x)
+                # print(x)
 
-                #Sort out nodes
+                # Sort out nodes
                 for slot in obj.material_slots:
 
                     nodetree = slot.material.node_tree
 
-                    outputNode = nodetree.nodes[0] #Presumed to be material output node
+                    # Presumed to be material output node
+                    outputNode = nodetree.nodes[0]
 
                     if(outputNode.type != "OUTPUT_MATERIAL"):
                         for node in nodetree.nodes:
@@ -164,19 +183,24 @@ def configure_objects(self, scene):
 
                     mainNode = outputNode.inputs[0].links[0].from_node
 
-                    if mainNode.type not in ['BSDF_PRINCIPLED','BSDF_DIFFUSE','GROUP']:
+                    if mainNode.type not in ['BSDF_PRINCIPLED', 'BSDF_DIFFUSE', 'GROUP']:
 
-                        #TODO! FIND THE PRINCIPLED PBR
-                        self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
+                        # TODO! FIND THE PRINCIPLED PBR
+                        self.report(
+                            {'INFO'}, "The primary material node is not supported. Seeking first principled.")
 
-                        if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)) > 0: 
-                            mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)[0]
+                        if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)) > 0:
+                            mainNode = functions.find_node_by_type(
+                                nodetree.nodes, function_constants.Node_Types.pbr_node)[0]
                         else:
-                            self.report({'INFO'}, "No principled found. Seeking diffuse")
-                            if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)) > 0: 
-                                mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)[0]
+                            self.report(
+                                {'INFO'}, "No principled found. Seeking diffuse")
+                            if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)) > 0:
+                                mainNode = functions.find_node_by_type(
+                                    nodetree.nodes, function_constants.Node_Types.diffuse)[0]
                             else:
-                                self.report({'INFO'}, "No supported nodes. Continuing anyway.")
+                                self.report(
+                                    {'INFO'}, "No supported nodes. Continuing anyway.")
                                 pass
 
                     if mainNode.type == 'GROUP':
@@ -184,15 +208,15 @@ def configure_objects(self, scene):
                             print("The material group is not supported!")
                             pass
 
-                    #use albedo white
+                    # use albedo white
                     if scene.TLM_SceneProperties.tlm_baketime_material == "Blank":
                         if not len(mainNode.inputs[0].links) == 0:
                             ainput = mainNode.inputs[0].links[0]
                             aoutput = mainNode.inputs[0].links[0].from_node
                             nodetree.links.remove(aoutput.outputs[0].links[0])
-                            mainNode.inputs[0].default_value = (1,0,0,1)
+                            mainNode.inputs[0].default_value = (1, 0, 0, 1)
                         else:
-                            mainNode.inputs[0].default_value = (1,0,0,1)
+                            mainNode.inputs[0].default_value = (1, 0, 0, 1)
 
                     if (mainNode.type == "BSDF_PRINCIPLED"):
                         print("BSDF_Principled")
@@ -202,13 +226,14 @@ def configure_objects(self, scene):
                                 print("NOT LEN 0")
                                 ninput = mainNode.inputs[19].links[0]
                                 noutput = mainNode.inputs[19].links[0].from_node
-                                nodetree.links.remove(noutput.outputs[0].links[0])
+                                nodetree.links.remove(
+                                    noutput.outputs[0].links[0])
 
-                        #Clamp metallic
+                        # Clamp metallic
                         if(mainNode.inputs[4].default_value == 1 and scene.TLM_SceneProperties.tlm_clamp_metallic):
                             mainNode.inputs[4].default_value = 0.99
-                        
-                        #Unindent?
+
+                        # Unindent?
                         # node = slot.material.name[:-5] + '_baked'
                         # if not node in bpy.data.materials:
                         #     img_name = obj.name + '_baked'
@@ -233,24 +258,25 @@ def configure_objects(self, scene):
                     nodetree = bpy.data.materials[slot.name].node_tree
                     nodes = nodetree.nodes
 
-                    #First search to get the first output material type
+                    # First search to get the first output material type
                     for node in nodetree.nodes:
                         if node.type == "OUTPUT_MATERIAL":
                             mainNode = node
                             break
 
-                    #Fallback to get search
+                    # Fallback to get search
                     if not mainNode.type == "OUTPUT_MATERIAL":
                         mainNode = nodetree.nodes.get("Material Output")
 
-                    #Last resort to first node in list
+                    # Last resort to first node in list
                     if not mainNode.type == "OUTPUT_MATERIAL":
                         mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
 
                     for node in nodes:
                         if "LM" in node.name:
-                            nodetree.links.new(node.outputs[0], mainNode.inputs[0])
+                            nodetree.links.new(
+                                node.outputs[0], mainNode.inputs[0])
 
                     for node in nodes:
                         if "Lightmap" in node.name:
-                                nodes.remove(node)
+                            nodes.remove(node)
